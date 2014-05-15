@@ -116,7 +116,7 @@ class Brakeman::Rescanner < Brakeman::Scanner
     #Process data flow and template rendering
     #from the controller
     tracker.controllers.each do |name, controller|
-      if controller[:file] == path
+      if controller[:files].include?(path)
         tracker.templates.each do |template_name, template|
           next unless template[:caller]
           unless template[:caller].grep(/^#{name}#/).empty?
@@ -178,8 +178,8 @@ class Brakeman::Rescanner < Brakeman::Scanner
 
   def rescan_model path
     num_models = tracker.models.length
-    tracker.reset_model path
-    process_model path if @app_tree.path_exists?(path)
+    model = tracker.reset_model path
+    model[:files].each { |path| process_model path if @app_tree.path_exists?(path)  }
 
     #Only need to rescan other things if a model is added or removed
     if num_models != tracker.models.length
@@ -192,12 +192,13 @@ class Brakeman::Rescanner < Brakeman::Scanner
   end
 
   def rescan_lib path
-    process_lib path if @app_tree.path_exists?(path)
+    lib = tracker.reset_lib path
+    lib[:files].each { |path| process_lib path if @app_tree.path_exists?(path)  }
 
     lib = nil
 
     tracker.libs.each do |name, library|
-      if library[:file] == path
+      if library[:files].include?(path)
         lib = library
         break
       end
@@ -265,7 +266,7 @@ class Brakeman::Rescanner < Brakeman::Scanner
     deleted_lib = nil
 
     tracker.libs.delete_if do |name, lib|
-      if lib[:file] == path
+      if lib[:files].include?(path)
         deleted_lib = lib
         true
       end
@@ -283,12 +284,19 @@ class Brakeman::Rescanner < Brakeman::Scanner
   def remove_deleted_file path
     deleted = false
 
-    [:controllers, :templates, :models, :libs].each do |collection|
+    [:controllers, :models, :libs].each do |collection|
       tracker.send(collection).delete_if do |name, data|
-        if data[:file] == path
+        if data[:files].include?(path)
           deleted = true
           true
         end
+      end
+    end
+
+    tracker.templates.delete_if do |name, data|
+      if data[:file] == path
+        deleted = true
+        true
       end
     end
 
@@ -335,8 +343,10 @@ class Brakeman::Rescanner < Brakeman::Scanner
     #Rescan controllers that mixed in library
     tracker.controllers.each do |name, controller|
       if controller[:includes].include? lib[:name]
-        unless @paths.include? controller[:file]
-          to_rescan << controller[:file]
+        controller[:files].each do |path|
+          unless @paths.include? path
+            to_rescan << path
+          end
         end
       end
     end
