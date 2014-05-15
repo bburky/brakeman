@@ -271,8 +271,6 @@ class Brakeman::Tracker
     model_name = nil
 
     @models.each do |name, model|
-      model[:files].include?(path)
-
       if model[:files].include?(path)
         model_name = name
         break
@@ -297,9 +295,12 @@ class Brakeman::Tracker
   end
 
   def reset_controller path
+    controller_name = nil
+
     #Remove from controller
-    @controllers.delete_if do |name, controller|
+    @controllers.each do |name, controller|
       if controller[:files].include?(path)
+        controller_name = name
         template_matcher = /^#{name}#/
 
         #Remove templates rendered from this controller
@@ -312,10 +313,10 @@ class Brakeman::Tracker
 
         #Remove calls indexed from this controller
         @call_index.remove_indexes_by_class [name]
-
-        true
+        break
       end
     end
+    @controllers.delete controller_name
   end
 
   #Clear information about routes

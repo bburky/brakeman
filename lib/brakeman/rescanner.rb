@@ -109,9 +109,9 @@ class Brakeman::Rescanner < Brakeman::Scanner
   end
 
   def rescan_controller path
-    tracker.reset_controller path
-    #Process source
-    process_controller path
+    controller = tracker.reset_controller path
+    paths =  controller.nil? ? [path] : controller[:files]
+    paths.each { |path| process_controller path if @app_tree.path_exists?(path)  }
 
     #Process data flow and template rendering
     #from the controller
@@ -179,7 +179,8 @@ class Brakeman::Rescanner < Brakeman::Scanner
   def rescan_model path
     num_models = tracker.models.length
     model = tracker.reset_model path
-    model[:files].each { |path| process_model path if @app_tree.path_exists?(path)  }
+    paths = model.nil? ? [path] : model[:files]
+    paths.each { |path| process_model path if @app_tree.path_exists?(path)  }
 
     #Only need to rescan other things if a model is added or removed
     if num_models != tracker.models.length
@@ -193,7 +194,8 @@ class Brakeman::Rescanner < Brakeman::Scanner
 
   def rescan_lib path
     lib = tracker.reset_lib path
-    lib[:files].each { |path| process_lib path if @app_tree.path_exists?(path)  }
+    paths = lib.nil? ? [path] : lib[:files]
+    paths.each { |path| process_lib path if @app_tree.path_exists?(path)  }
 
     lib = nil
 
