@@ -1,5 +1,5 @@
 class ExecController
-  def exec_this
+  def inner_exec
     system params[:user_input]
   end
 end
