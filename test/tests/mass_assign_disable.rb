@@ -57,7 +57,6 @@ class MassAssignDisableTest < Test::Unit::TestCase
 
     #We disable whitelist, but add strong_parameters globally, so
     #there should be no change.
-    assert_reindex :none
     assert_changes
     assert_fixed 0
     assert_new 0
@@ -68,7 +67,6 @@ class MassAssignDisableTest < Test::Unit::TestCase
       append "Gemfile", "gem 'protected_attributes'"
     end
 
-    assert_reindex :none
     assert_changes
     assert_fixed 0
     assert_new 1
@@ -84,7 +82,6 @@ class MassAssignDisableTest < Test::Unit::TestCase
         "config.active_record.whitelist_attributes = true"
     end
 
-    assert_reindex :none
     assert_changes
     assert_fixed 0
     assert_new 0
@@ -108,7 +105,6 @@ class MassAssignDisableTest < Test::Unit::TestCase
 
     #We disable whitelist, but add strong_parameters globally, so
     #there should be no change.
-    assert_reindex :none
     assert_changes
     assert_fixed 0
     assert_new 0

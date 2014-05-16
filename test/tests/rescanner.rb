@@ -21,7 +21,6 @@ class RescannerTests < Test::Unit::TestCase
     before_rescan_of []
 
     assert rescan.any_warnings?
-    assert_reindex :none
     assert_changes false
     assert_fixed 0
     assert_new 0
@@ -32,7 +31,6 @@ class RescannerTests < Test::Unit::TestCase
       write_file "IRRELEVANT", "Nothing special here"
     end
 
-    assert_reindex :none
     assert_changes false #No files were rescanned
     assert_new 0
     assert_fixed 0
@@ -43,7 +41,6 @@ class RescannerTests < Test::Unit::TestCase
       remove "README.rdoc"
     end
 
-    assert_reindex :none
     assert_changes false #No files were rescanned
     assert_new 0
     assert_fixed 0
@@ -56,7 +53,6 @@ class RescannerTests < Test::Unit::TestCase
       remove template
     end
 
-    assert_reindex :none #because deleted
     assert_changes
     assert_new 0
     assert_fixed 1
@@ -70,7 +66,6 @@ class RescannerTests < Test::Unit::TestCase
       remove_method controller, :remove_this
     end
 
-    assert_reindex :controllers, :templates
     assert_changes
     assert_new 0
     assert_fixed 1
@@ -83,7 +78,6 @@ class RescannerTests < Test::Unit::TestCase
       remove_method controller, :change_lines
     end
 
-    assert_reindex :controllers, :templates
     assert_changes
     assert_new 0
     assert_fixed 0
@@ -96,11 +90,23 @@ class RescannerTests < Test::Unit::TestCase
       remove controller
     end
 
-    assert_reindex :none
     assert_changes
     assert_new 0
     assert_fixed 4
   end
+
+  def test_delete_controller_dependency
+    controller = "app/controllers/exec_controller/command_dependency.rb"
+
+    before_rescan_of controller do
+      remove controller
+    end
+
+    assert_changes
+    assert_new 0
+    assert_fixed 1
+  end
+
 
   def test_controller_escape_params
     controller = "app/controllers/users_controller.rb"
@@ -109,7 +115,6 @@ class RescannerTests < Test::Unit::TestCase
       replace controller, "@user_data = raw params[:user_data]", "@user_data = params[:user_data]"
     end
 
-    assert_reindex :controllers, :templates
     assert_changes
     assert_new 0
     assert_fixed 1
@@ -122,7 +127,6 @@ class RescannerTests < Test::Unit::TestCase
       append template, "<%= raw params[:bad] %>"
     end
 
-    assert_reindex :templates
     assert_changes
     assert_new 1
     assert_fixed 0
@@ -135,7 +139,6 @@ class RescannerTests < Test::Unit::TestCase
       append template, "<%= raw @user.thing %>"
     end
 
-    assert_reindex :templates
     assert_changes
     assert_new 1
     assert_fixed 0
@@ -148,10 +151,9 @@ class RescannerTests < Test::Unit::TestCase
       remove model
     end
 
-    assert_reindex :none
     assert_changes
-    assert_new 7 #User is no longer a model, causing MORE warnings
-    assert_fixed 7
+    assert_new 0
+    assert_fixed 3
   end
 
   def test_add_method_to_model
@@ -165,7 +167,6 @@ class RescannerTests < Test::Unit::TestCase
       RUBY
     end
 
-    assert_reindex :models
     assert_changes
     assert_new 1
     assert_fixed 0
@@ -179,7 +180,6 @@ class RescannerTests < Test::Unit::TestCase
         "config.active_record.whitelist_attributes = false"
     end
 
-    assert_reindex :none
     assert_changes
     assert_new 1
     assert_fixed 0
@@ -192,7 +192,6 @@ class RescannerTests < Test::Unit::TestCase
       replace routes, "match 'implicit' => 'removal#implicit_render'", ""
     end
 
-    assert_reindex :controllers, :templates
     assert_changes
     assert_new 0
     assert_fixed 1
@@ -206,7 +205,6 @@ class RescannerTests < Test::Unit::TestCase
       remove initializer
     end
 
-    assert_reindex :none
     assert_changes
     assert_new 0
     assert_fixed 0
@@ -219,7 +217,6 @@ class RescannerTests < Test::Unit::TestCase
       remove lib
     end
 
-    assert_reindex :controllers, :templates
     assert_changes
     assert_new 0
     assert_fixed 1
@@ -232,7 +229,6 @@ class RescannerTests < Test::Unit::TestCase
       remove_method lib, :mixed_in
     end
 
-    assert_reindex :controllers, :templates
     assert_changes
     assert_new 0
     assert_fixed 1
@@ -247,7 +243,6 @@ class RescannerTests < Test::Unit::TestCase
 
     #@original is actually modified
     assert @original.config[:rails_version], "3.2.6"
-    assert_reindex :none
     assert_changes
     assert_new 1
     assert_fixed 0
@@ -262,7 +257,6 @@ class RescannerTests < Test::Unit::TestCase
 
     #@original is actually modified
     assert @original.config[:rails_version], "3.2.17"
-    assert_reindex :none
     assert_changes
     assert_new 0
     if RUBY_PLATFORM == "java"

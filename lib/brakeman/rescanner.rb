@@ -16,7 +16,6 @@ class Brakeman::Rescanner < Brakeman::Scanner
     @paths = changed_files.map {|f| @app_tree.expand_path(f) }
     @old_results = tracker.filtered_warnings  #Old warnings from previous scan
     @changes = nil                 #True if files had to be rescanned
-    @reindex = Set.new
   end
 
   #Runs checks.
@@ -56,9 +55,7 @@ class Brakeman::Rescanner < Brakeman::Scanner
       end
     end
 
-    if @changes and not @reindex.empty?
-      tracker.reindex_call_sites @reindex
-    end
+    tracker.index_call_sites if @changes
 
     self
   end
@@ -74,10 +71,8 @@ class Brakeman::Rescanner < Brakeman::Scanner
     case type
     when :controller
       rescan_controller path
-      @reindex << :controllers << :templates
     when :template
       rescan_template path
-      @reindex << :templates
     when :model
       rescan_model path
     when :lib
@@ -94,7 +89,6 @@ class Brakeman::Rescanner < Brakeman::Scanner
       tracker.reset_templates :only_rendered => true
       process_routes
       process_controllers
-      @reindex << :controllers << :templates
     when :gemfile
       if tracker.config[:gems][:rails_xss] and tracker.config[:escape_html]
         tracker.config[:escape_html] = false
@@ -127,6 +121,7 @@ class Brakeman::Rescanner < Brakeman::Scanner
         @processor.process_controller_alias controller[:name], controller[:src]
       end
     end
+
   end
 
   def rescan_template path
@@ -174,6 +169,7 @@ class Brakeman::Rescanner < Brakeman::Scanner
         rescan_template template[:file]
       end
     end
+
   end
 
   def rescan_model path
@@ -182,14 +178,6 @@ class Brakeman::Rescanner < Brakeman::Scanner
     paths = model.nil? ? [path] : model[:files]
     paths.each { |path| process_model path if @app_tree.path_exists?(path)  }
 
-    #Only need to rescan other things if a model is added or removed
-    if num_models != tracker.models.length
-      process_templates
-      process_controllers
-      @reindex << :templates << :controllers
-    end
-
-    @reindex << :models
   end
 
   def rescan_lib path
@@ -213,11 +201,11 @@ class Brakeman::Rescanner < Brakeman::Scanner
   def rescan_deleted_file path, type
     case type
     when :controller
-      rescan_deleted_controller path
+      rescan_controller path
     when :template
       rescan_deleted_template path
     when :model
-      rescan_deleted_model path
+      rescan_model path
     when :lib
       rescan_deleted_lib path
     when :initializer
@@ -231,14 +219,6 @@ class Brakeman::Rescanner < Brakeman::Scanner
     end
 
     true
-  end
-
-  def rescan_deleted_model path
-    tracker.reset_model path
-  end
-
-  def rescan_deleted_controller path
-    tracker.reset_controller path
   end
 
   def rescan_deleted_template path

@@ -159,14 +159,6 @@ module BrakemanTester::RescanTestHelper
     assert_equal expected, rescanner.changes
   end
 
-  def assert_reindex *types
-    if types == [:none]
-      assert rescanner.reindex.empty?, "Expected no reindexing, got #{rescanner.reindex.inspect}"
-    else
-      assert_equal Set.new(types), rescanner.reindex
-    end
-  end
-
   def full_path file
     File.expand_path file, @dir
   end

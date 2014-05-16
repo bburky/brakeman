@@ -12,7 +12,6 @@ class RailsLTSTests < Test::Unit::TestCase
 
     #@original is actually modified
     assert @original.config[:gems][:"railslts-version"], "2.3.18.6"
-    assert_reindex :none
     assert_changes
     assert_new 0
     assert_fixed 2
@@ -27,7 +26,6 @@ class RailsLTSTests < Test::Unit::TestCase
 
     #@original is actually modified
     assert @original.config[:gems][:"railslts-version"], "2.3.18.7"
-    assert_reindex :none
     assert_changes
     assert_new 0
     assert_fixed 3 # 2 + CVE-2012-1099
@@ -42,7 +40,6 @@ class RailsLTSTests < Test::Unit::TestCase
 
     #@original is actually modified
     assert @original.config[:gems][:"railslts-version"], "2.3.18.8"
-    assert_reindex :none
     assert_changes
     assert_new 0
     assert_fixed 4 # 2 + CVE-2012-1099 + CVE_2014_0081
